@@ -12,17 +12,49 @@ document.addEventListener("DOMContentLoaded", () => {
       toyFormContainer.style.display = "none";
     }
   });
+
+  fetch("http://localhost:3000/toys")
+    .then(response => response.json())
+    .then(data => {
+      const toyCollection = document.getElementById("toy-collection");
+      data.forEach(toy => {
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "card";
+
+        const nameElement = document.createElement("h2");
+        nameElement.textContent = toy.name;
+        cardDiv.appendChild(nameElement);
+
+        const imageElement = document.createElement("img");
+        imageElement.src = toy.image;
+        imageElement.className = "toy-avatar";
+        cardDiv.appendChild(imageElement);
+
+        const descriptionElement = document.createElement("p");
+        descriptionElement.textContent = `${toy.likes} Likes`;
+        cardDiv.appendChild(descriptionElement);
+
+        const likeButton = document.createElement("button");
+        likeButton.className = "like-btn";
+        likeButton.id = toy.id;
+        likeButton.textContent = "Like ❤️";
+        cardDiv.appendChild(likeButton);
+        likeButton.addEventListener("click", like);
+
+        toyCollection.appendChild(cardDiv);
+      });
+    })
+    .catch(error => {
+      console.log("Error:", error);
+    });
 });
-function like(event) {
+
+function like(event, toy) {
   const button = event.target;
   const toyId = button.id;
   const descriptionElement = button.previousElementSibling;
   let likes = parseInt(descriptionElement.textContent.split(" ")[1]);
   likes++;
-
-const imageElement = document.createElement("img");
-imageElement.src = toy.image;
-cardDiv.appendChild(imageElement);
 
   fetch(`http://localhost:3000/toys/${toyId}`, {
     method: 'PATCH',
@@ -42,36 +74,65 @@ cardDiv.appendChild(imageElement);
     });
 }
 
-fetch("http://localhost:3000/toys")
-  .then(response => response.json())
-  .then(data => {
-    const toyCollection = document.getElementById("toy-collection");
-    data.forEach(toy => {
-      const cardDiv = document.createElement("div");
-      cardDiv.className = "card";
+const toyForm = document.querySelector(".add-toy-form");
 
-      const nameElement = document.createElement("h2");
-      nameElement.textContent = toy.name;
-      cardDiv.appendChild(nameElement);
+toyForm.addEventListener("submit", (event) => {
+  event.preventDefault();
 
-      const imageElement = document.createElement("img");
-      imageElement.src = toy.image;
-      cardDiv.appendChild(imageElement);
+  const nameInput = document.querySelector("#name-input");
+  const imageInput = document.querySelector("#image-input");
 
-      const descriptionElement = document.createElement("p");
-      descriptionElement.textContent = `Likes: ${toy.likes}`;
-      cardDiv.appendChild(descriptionElement);
+  const newToy = {
+    name: nameInput.value,
+    image: imageInput.value,
+    likes: 0
+  };
 
-      const likeButton = document.createElement("button");
-      likeButton.className = "like-btn";
-      likeButton.id = toy.id;
-      likeButton.textContent = "Like ❤️";
-      cardDiv.appendChild(likeButton);
-      likeButton.addEventListener("click", like);
-
-      toyCollection.appendChild(cardDiv);
-    });
+  fetch("http://localhost:3000/toys", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(newToy)
   })
-  .catch(error => {
-    console.log("Error:", error);
-  });
+    .then(response => response.json())
+    .then(data => {
+      // Render the newly created toy to the DOM
+      renderToy(data);
+    })
+    .catch(error => {
+      console.error("Error:", error);
+    });
+
+  // Reset the form inputs
+  toyForm.reset();
+});
+
+function renderToy(toy) {
+  const toyCollection = document.getElementById("toy-collection");
+
+  const cardDiv = document.createElement("div");
+  cardDiv.className = "card";
+
+  const nameElement = document.createElement("h2");
+  nameElement.textContent = toy.name;
+  cardDiv.appendChild(nameElement);
+
+  const imageElement = document.createElement("img");
+  imageElement.src = toy.image;
+  imageElement.className = "toy-avatar";
+  cardDiv.appendChild(imageElement);
+
+  const descriptionElement = document.createElement("p");
+  descriptionElement.textContent = `${toy.likes} Likes`;
+  cardDiv.appendChild(descriptionElement);
+
+  const likeButton = document.createElement("button");
+  likeButton.className = "like-btn";
+  likeButton.id = toy.id;
+  likeButton.textContent = "Like ❤️";
+  cardDiv.appendChild(likeButton);
+  likeButton.addEventListener("click", like);
+
+  toyCollection.appendChild(cardDiv);
+}
